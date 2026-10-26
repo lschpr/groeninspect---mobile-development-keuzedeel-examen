@@ -35,7 +35,7 @@ function Navigatie() {
           <Stack.Screen
             name="NieuweMelding"
             component={NieuweMeldingScreen}
-            options={{ presentation: 'modal' }}
+            options={{ presentation: 'modal', headerBackButtonMenuEnabled: false }}
           />
           <Stack.Screen name="Details" component={DetailsScreen} />
         </>

@@ -1,3 +1,4 @@
+import { usePreventRemove } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -74,18 +75,21 @@ export function NieuweMeldingScreen({ navigation }: Props) {
 
   // Bevestiging vragen bij annuleren (knop, veeggebaar of Android-terugknop).
   const heeftInvoer = keuze !== null || fotoUri !== null || beschrijving.trim().length > 0;
-  const magVerlaten = useRef(false);
+  // usePreventRemove i.p.v. een 'beforeRemove'-listener: native-stack schakelt
+  // dan zelf het veeggebaar uit, zodat het scherm niet native al verdwijnt.
+  const [magVerlaten, setMagVerlaten] = useState(false);
+  usePreventRemove(heeftInvoer && !magVerlaten, ({ data }) => {
+    bevestig('Melding verwijderen?', 'De ingevoerde gegevens worden niet opgeslagen.', 'Verwijder', 'Verder gaan').then(
+      (ok) => {
+        if (ok) navigation.dispatch(data.action);
+      },
+    );
+  });
+
+  // Na opslaan pas teruggaan als de blokkade is opgeheven.
   useEffect(() => {
-    return navigation.addListener('beforeRemove', (e) => {
-      if (magVerlaten.current || !heeftInvoer) return;
-      e.preventDefault();
-      bevestig('Melding verwijderen?', 'De ingevoerde gegevens worden niet opgeslagen.', 'Verwijder', 'Verder gaan').then(
-        (ok) => {
-          if (ok) navigation.dispatch(e.data.action);
-        },
-      );
-    });
-  }, [navigation, heeftInvoer]);
+    if (magVerlaten) navigation.goBack();
+  }, [magVerlaten, navigation]);
 
   const verwerkFoto = (result: ImagePicker.ImagePickerResult) => {
     if (result.canceled) return;
@@ -153,8 +157,7 @@ export function NieuweMeldingScreen({ navigation }: Props) {
         verstuurdOp: null,
       });
       tik('succes');
-      magVerlaten.current = true;
-      navigation.goBack();
+      setMagVerlaten(true);
     } catch {
       setOpslaan(false);
       const opnieuw = await bevestig(
