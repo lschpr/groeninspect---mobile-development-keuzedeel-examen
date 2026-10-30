@@ -64,18 +64,32 @@ export function OverzichtScreen({ navigation }: Props) {
     <View>
       <View style={styles.titelRij}>
         <Text style={styles.largeTitle}>Meldingen</Text>
-        <Pressable
-          onPress={() => navigation.navigate('NieuweMelding')}
-          hitSlop={8}
-          style={({ pressed }) => [styles.plus, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-          accessibilityLabel="Nieuwe melding"
-        >
-          <Icon name="plus" size={24} color={colors.white} />
-        </Pressable>
+        <View style={styles.acties}>
+          {medewerker?.rol === 'admin' && (
+            <Pressable
+              onPress={() => navigation.navigate('Gebruikers')}
+              hitSlop={8}
+              style={({ pressed }) => [styles.beheer, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Gebruikers beheren"
+            >
+              <Icon name="account-multiple-plus-outline" size={22} color={colors.primary} />
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => navigation.navigate('NieuweMelding')}
+            hitSlop={8}
+            style={({ pressed }) => [styles.plus, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Nieuwe melding"
+          >
+            <Icon name="plus" size={24} color={colors.white} />
+          </Pressable>
+        </View>
       </View>
       <Text style={styles.subtitle}>
         {medewerker?.naam}
+        {medewerker?.rol === 'admin' ? ' · Admin' : ''}
         {aantalOpen > 0 ? ` · ${aantalOpen} nog te versturen` : ''}
       </Text>
       <View style={styles.segmented}>
@@ -200,6 +214,15 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  acties: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  beheer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   plus: {
     width: 36,

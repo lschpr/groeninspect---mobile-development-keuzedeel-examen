@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from './src/auth';
 import { DetailsScreen } from './src/screens/DetailsScreen';
+import { GebruikersScreen } from './src/screens/GebruikersScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { NieuweMeldingScreen } from './src/screens/NieuweMeldingScreen';
 import { OverzichtScreen } from './src/screens/OverzichtScreen';
@@ -38,6 +39,7 @@ function Navigatie() {
             options={{ presentation: 'modal', headerBackButtonMenuEnabled: false }}
           />
           <Stack.Screen name="Details" component={DetailsScreen} />
+          {medewerker.rol === 'admin' && <Stack.Screen name="Gebruikers" component={GebruikersScreen} />}
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

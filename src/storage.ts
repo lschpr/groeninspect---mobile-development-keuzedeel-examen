@@ -2,10 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 
+import type { Account } from './data/medewerkers';
 import type { Medewerker, Melding } from './types';
 
 const MELDINGEN_KEY = 'groeninspect:meldingen';
 const SESSIE_KEY = 'groeninspect:sessie';
+const ACCOUNTS_KEY = 'groeninspect:accounts';
 
 export async function laadMeldingen(): Promise<Melding[]> {
   const json = await AsyncStorage.getItem(MELDINGEN_KEY);
@@ -48,12 +50,30 @@ export function bewaarFotoPermanent(tijdelijkeUri: string, id: string): string {
 
 export async function laadSessie(): Promise<Medewerker | null> {
   const json = await AsyncStorage.getItem(SESSIE_KEY);
-  return json ? (JSON.parse(json) as Medewerker) : null;
+  if (!json) return null;
+  const sessie = JSON.parse(json) as Medewerker;
+  // Sessies van voor de invoering van rollen hebben nog geen rol.
+  return { ...sessie, rol: sessie.rol ?? 'medewerker' };
 }
 
 export async function bewaarSessie(medewerker: Medewerker | null): Promise<void> {
   if (medewerker) await AsyncStorage.setItem(SESSIE_KEY, JSON.stringify(medewerker));
   else await AsyncStorage.removeItem(SESSIE_KEY);
+}
+
+// Accounts die een admin in de app heeft aangemaakt.
+export async function laadExtraAccounts(): Promise<Account[]> {
+  const json = await AsyncStorage.getItem(ACCOUNTS_KEY);
+  if (!json) return [];
+  try {
+    return JSON.parse(json) as Account[];
+  } catch {
+    return [];
+  }
+}
+
+export async function bewaarExtraAccounts(accounts: Account[]): Promise<void> {
+  await AsyncStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 }
 
 export function nieuwId(): string {

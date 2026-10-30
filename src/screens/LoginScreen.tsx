@@ -30,7 +30,7 @@ export function LoginScreen() {
   const [bezig, setBezig] = useState(false);
   const [mislukt, setMislukt] = useState(0);
   const [geblokkeerdTot, setGeblokkeerdTot] = useState<number | null>(null);
-  const [nu, setNu] = useState(Date.now());
+  const [nu, setNu] = useState(() => Date.now());
 
   const resterend = geblokkeerdTot ? Math.max(0, Math.ceil((geblokkeerdTot - nu) / 1000)) : 0;
 

@@ -18,9 +18,13 @@ export type Melding = {
   verstuurdOp: string | null; // ISO-datum, null = nog niet verstuurd
 };
 
+// Een admin kan daarnaast gebruikers aanmaken en verwijderen.
+export type Rol = 'medewerker' | 'admin';
+
 export type Medewerker = {
   gebruikersnaam: string;
   naam: string;
+  rol: Rol;
 };
 
 export type RootStackParamList = {
@@ -28,4 +32,5 @@ export type RootStackParamList = {
   Overzicht: undefined;
   NieuweMelding: undefined;
   Details: { id: string };
+  Gebruikers: undefined;
 };

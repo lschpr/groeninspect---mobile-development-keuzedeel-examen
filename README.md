@@ -20,12 +20,33 @@ Keuzes bij open punten uit de use-cases:
 
 ## Demo-accounts
 
-| Gebruikersnaam | Wachtwoord | Naam |
-|---|---|---|
-| `lvanvliet` | `groen123` | L. van Vliet |
-| `demo` | `demo123` | Demo Medewerker |
+| Gebruikersnaam | Wachtwoord | Naam | Rol |
+|---|---|---|---|
+| `admin` | `admin123` | Beheerder | Admin |
+| `lvanvliet` | `groen123` | L. van Vliet | Medewerker |
+| `demo` | `demo123` | Demo Medewerker | Medewerker |
 
-Accounts en het kantooradres (`meldingen@groeninspect.nl`) staan in `src/data/medewerkers.ts`.
+De vaste accounts en het kantooradres (`meldingen@groeninspect.nl`) staan in `src/data/medewerkers.ts`.
+
+## Admin: gebruikers beheren
+
+Een account met de rol **Admin** kan in de app nieuwe gebruikers aanmaken:
+
+1. Log in als `admin` / `admin123`.
+2. Tik in het overzicht rechtsboven op het gebruikers-icoon (naast de groene +).
+3. Vul onder **Nieuwe gebruiker** naam, gebruikersnaam en wachtwoord in en kies de rol
+   (Medewerker of Admin). Tik op **Gebruiker toevoegen**.
+4. De nieuwe gebruiker kan direct inloggen.
+
+Regels: gebruikersnaam minimaal 3 tekens (letters, cijfers, `.`, `-`, `_`) en uniek;
+wachtwoord minimaal 6 tekens. Onder **Alle gebruikers** tik je op een zelf aangemaakte
+gebruiker om die te verwijderen (de meldingen blijven bewaard). De vaste accounts uit de code
+en je eigen account kunnen niet verwijderd worden. Medewerkers zien het gebruikersbeheer niet;
+het scherm bestaat voor hen ook niet in de navigatie.
+
+Aangemaakte accounts worden alleen lokaal op het toestel bewaard (AsyncStorage, sleutel
+`groeninspect:accounts`), dus niet gedeeld tussen toestellen. Wachtwoorden worden niet versleuteld
+opgeslagen. Voor een echte uitrol hoort dit bij een server met gehashte wachtwoorden.
 
 ## Starten
 
@@ -38,9 +59,11 @@ npx expo start        # scan de QR-code met Expo Go
 
 ```
 App.tsx                     navigatie (alleen inlogscherm zolang je niet ingelogd bent)
-src/screens/                LoginScreen, NieuweMeldingScreen, OverzichtScreen, DetailsScreen
+src/screens/                LoginScreen, NieuweMeldingScreen, OverzichtScreen, DetailsScreen,
+                            GebruikersScreen (alleen admin)
+src/data/medewerkers.ts     vaste accounts, inlogcontrole, gebruikers aanmaken/verwijderen
 src/components/             Logo (GroenInspect-logo, SVG) en gedeelde UI-onderdelen
-src/storage.ts              AsyncStorage + permanente opslag van foto's
+src/storage.ts              AsyncStorage (meldingen, sessie, accounts) + permanente opslag van foto's
 src/location.ts             GPS via expo-location
 src/theme.ts                huisstijlkleuren en tekstgroottes
 ```

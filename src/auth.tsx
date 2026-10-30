@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const inloggen = async (gebruikersnaam: string, wachtwoord: string) => {
-    const gevonden = controleerInlog(gebruikersnaam, wachtwoord);
+    const gevonden = await controleerInlog(gebruikersnaam, wachtwoord);
     if (!gevonden) return false;
     await bewaarSessie(gevonden);
     setMedewerker(gevonden);
