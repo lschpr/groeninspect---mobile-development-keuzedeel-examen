@@ -48,6 +48,25 @@ export function bewaarFotoPermanent(tijdelijkeUri: string, id: string): string {
   return doel.uri;
 }
 
+// Geeft een bestand terug dat de mailapp als bijlage kan lezen, of null als
+// de foto niet (meer) bestaat. Het opgeslagen pad kan verouderd zijn (op iOS
+// verandert de app-map na een update/herinstallatie), dus we zoeken de foto
+// eerst op in de huidige documentenmap. Daarna kopiëren we hem naar de cache
+// met een duidelijke bestandsnaam; Android-mailapps kunnen die map lezen.
+// Niet voor web; zie daarvoor webMail.ts.
+export function fotoVoorBijlage(melding: Melding): string | null {
+  const kandidaten = [new File(Paths.document, 'meldingen', `${melding.id}.jpg`), new File(melding.fotoUri)];
+  const bron = kandidaten.find((f) => f.exists);
+  if (!bron) return null;
+
+  const map = new Directory(Paths.cache, 'bijlagen');
+  map.create({ idempotent: true, intermediates: true });
+  const bijlage = new File(map, `GroenInspect-${melding.id}.jpg`);
+  if (bijlage.exists) bijlage.delete();
+  bron.copy(bijlage);
+  return bijlage.uri;
+}
+
 export async function laadSessie(): Promise<Medewerker | null> {
   const json = await AsyncStorage.getItem(SESSIE_KEY);
   if (!json) return null;

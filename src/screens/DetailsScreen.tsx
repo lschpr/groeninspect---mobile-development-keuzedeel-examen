@@ -7,15 +7,16 @@ import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BackButton, Footer, NavBar, PrimaryButton, Row, Screen, Section, tik } from '../components/ui';
 import { KANTOOR_EMAIL } from '../data/medewerkers';
-import { toonMelding } from '../dialog';
+import { bevestig, toonMelding } from '../dialog';
 import { formatDatum, formatLocatie, kaartLink } from '../format';
-import { laadMeldingen, markeerAlsVerstuurd } from '../storage';
+import { fotoVoorBijlage, laadMeldingen, markeerAlsVerstuurd } from '../storage';
 import { colors, iconVoorCategorie, radius, type } from '../theme';
 import type { Melding, RootStackParamList } from '../types';
+import { deelMetFoto, downloadFoto, openMailto } from '../webMail';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
 
-function mailTekst(m: Melding): string {
+function mailTekst(m: Melding, metFoto: boolean): string {
   return [
     'Nieuwe melding via de GroenInspect app',
     '',
@@ -27,7 +28,7 @@ function mailTekst(m: Melding): string {
     `Datum: ${formatDatum(m.aangemaaktOp)}`,
     `Melding-ID: ${m.id}`,
     '',
-    'De foto is als bijlage toegevoegd.',
+    metFoto ? 'De foto is als bijlage toegevoegd.' : 'Let op: de foto kon niet als bijlage worden toegevoegd.',
   ]
     .filter((regel) => regel !== null)
     .join('\n');
@@ -43,10 +44,46 @@ export function DetailsScreen({ navigation, route }: Props) {
 
   useFocusEffect(laad);
 
+  const onVerstuurd = async (id: string) => {
+    await markeerAlsVerstuurd(id);
+    tik('succes');
+    laad();
+  };
+
+  // Webversie: een mailto-link kan geen bijlage meesturen, dus eerst het
+  // deelmenu met foto proberen; anders de foto downloaden en de mail openen.
+  const verstuurViaWeb = async (m: Melding) => {
+    const onderwerp = `Melding ${m.categorie}, ${formatDatum(m.aangemaaktOp)}`;
+    const bestandsnaam = `GroenInspect-${m.id}.jpg`;
+    const resultaat = await deelMetFoto({
+      aan: KANTOOR_EMAIL,
+      onderwerp,
+      tekst: mailTekst(m, true),
+      fotoUri: m.fotoUri,
+      bestandsnaam,
+    });
+    if (resultaat === 'gedeeld') await onVerstuurd(m.id);
+    if (resultaat !== 'niet-ondersteund') return;
+
+    const doorgaan = await bevestig(
+      'Foto zelf toevoegen',
+      'Deze browser kan de foto niet automatisch aan de mail koppelen. De foto wordt gedownload; voeg hem in je mail toe als bijlage.',
+      'Foto downloaden en mail openen',
+    );
+    if (!doorgaan) return;
+    downloadFoto(m.fotoUri, bestandsnaam);
+    openMailto(KANTOOR_EMAIL, onderwerp, mailTekst(m, true));
+    await onVerstuurd(m.id);
+  };
+
   const onVersturen = async () => {
     if (!melding) return;
     setVersturen(true);
     try {
+      if (Platform.OS === 'web') {
+        await verstuurViaWeb(melding);
+        return;
+      }
       const beschikbaar = await MailComposer.isAvailableAsync();
       if (!beschikbaar) {
         tik('fout');
@@ -56,18 +93,22 @@ export function DetailsScreen({ navigation, route }: Props) {
         );
         return;
       }
+      const bijlage = fotoVoorBijlage(melding);
+      if (!bijlage) {
+        const doorgaan = await bevestig(
+          'Foto niet toegevoegd',
+          'De foto van deze melding is niet meer gevonden op dit toestel. Wil je de melding zonder foto versturen?',
+          'Zonder foto versturen',
+        );
+        if (!doorgaan) return;
+      }
       const resultaat = await MailComposer.composeAsync({
         recipients: [KANTOOR_EMAIL],
         subject: `Melding ${melding.categorie}, ${formatDatum(melding.aangemaaktOp)}`,
-        body: mailTekst(melding),
-        // Op web kunnen geen bijlagen worden meegegeven via mailto.
-        attachments: Platform.OS === 'web' ? undefined : [melding.fotoUri],
+        body: mailTekst(melding, bijlage !== null),
+        attachments: bijlage ? [bijlage] : undefined,
       });
-      if (resultaat.status !== MailComposer.MailComposerStatus.CANCELLED) {
-        await markeerAlsVerstuurd(melding.id);
-        tik('succes');
-        laad();
-      }
+      if (resultaat.status !== MailComposer.MailComposerStatus.CANCELLED) await onVerstuurd(melding.id);
     } catch {
       toonMelding('Versturen mislukt', 'De mailapp kon niet worden geopend. Probeer het later opnieuw.');
     } finally {

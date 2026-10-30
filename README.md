@@ -17,6 +17,9 @@ Keuzes bij open punten uit de use-cases:
 - **Geen GPS-signaal:** de app vraagt of de melding zonder locatie opgeslagen moet worden.
 - **Annuleren:** bij terug gaan met ingevulde gegevens vraagt de app om bevestiging.
 - **Geen mailapp:** foutmelding; de melding blijft bewaard en kan later verstuurd worden.
+- **Versturen vanuit de webversie:** een `mailto:`-link kan geen bijlagen meesturen. De app opent daarom
+  het deelmenu van de browser met de foto erbij (Web Share API; het kantooradres staat dan in de tekst).
+  Ondersteunt de browser dat niet, dan wordt de foto gedownload en opent de mail; voeg de foto daar zelf toe.
 
 ## Demo-accounts
 
@@ -65,6 +68,7 @@ src/data/medewerkers.ts     vaste accounts, inlogcontrole, gebruikers aanmaken/v
 src/components/             Logo (GroenInspect-logo, SVG) en gedeelde UI-onderdelen
 src/storage.ts              AsyncStorage (meldingen, sessie, accounts) + permanente opslag van foto's
 src/location.ts             GPS via expo-location
+src/webMail.ts              versturen met foto in de webversie (deelmenu of download)
 src/theme.ts                huisstijlkleuren en tekstgroottes
 ```
 
