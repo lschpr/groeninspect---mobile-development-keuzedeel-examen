@@ -30,6 +30,8 @@ export function GebruikersScreen({ navigation }: Props) {
   const [fout, setFout] = useState<string | null>(null);
   const [gelukt, setGelukt] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
+  // Refs wijzen naar een invoerveld, zodat we na "volgende" op het
+  // toetsenbord automatisch naar het volgende veld kunnen springen (.focus()).
   const gebruikersnaamRef = useRef<ComponentRef<typeof TextInput>>(null);
   const wachtwoordRef = useRef<ComponentRef<typeof TextInput>>(null);
 
@@ -41,6 +43,9 @@ export function GebruikersScreen({ navigation }: Props) {
     }, [laad]),
   );
 
+  // Een functie die een functie teruggeeft. wijzig(setNaam) levert een nieuwe
+  // functie op die de tekst opslaat én de fout/gelukt-melding wist. Zo hoef je
+  // dat niet bij elk invoerveld opnieuw te schrijven.
   const wijzig = (setter: (t: string) => void) => (t: string) => {
     setter(t);
     setFout(null);
@@ -142,6 +147,8 @@ export function GebruikersScreen({ navigation }: Props) {
             {accounts.map((a) => {
               const vast = isVastAccount(a.gebruikersnaam);
               const jijZelf = a.gebruikersnaam === medewerker?.gebruikersnaam;
+              // Vaste accounts en je eigen account kun je niet aantikken (geen
+              // onPress), dus die kun je ook niet verwijderen.
               return (
                 <Row
                   key={a.gebruikersnaam}

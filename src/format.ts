@@ -2,6 +2,7 @@ import type { Locatie } from './types';
 
 const MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
+// Zet een 0 ervoor als het getal maar één cijfer heeft: 5 wordt "05".
 const tweeCijfers = (n: number) => n.toString().padStart(2, '0');
 
 // "14 okt 2026 · 13:12"
@@ -14,6 +15,8 @@ export function formatDatum(iso: string): string {
 export function formatLocatie(locatie: Locatie | null): string {
   if (!locatie) return 'Niet beschikbaar (geen GPS-signaal)';
   const { latitude, longitude } = locatie;
+  // Een positief getal is noord/oost, een negatief getal zuid/west.
+  // Math.abs haalt het minteken weg, toFixed(4) rondt af op 4 decimalen.
   const ns = latitude >= 0 ? 'N' : 'S';
   const ew = longitude >= 0 ? 'E' : 'W';
   return `${Math.abs(latitude).toFixed(4)} ${ns}, ${Math.abs(longitude).toFixed(4)} ${ew}`;
@@ -29,6 +32,8 @@ const MAANDEN_VOL = [
 ];
 
 // Sleutel per kalenderdag, om meldingen per dag te groeperen.
+// Twee meldingen op dezelfde dag krijgen dezelfde tekst, bijv. "2026-9-14"
+// (let op: getMonth() telt vanaf 0, dus januari = 0).
 export function dagSleutel(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;

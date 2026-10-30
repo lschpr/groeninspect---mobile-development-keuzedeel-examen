@@ -4,6 +4,7 @@ import type { Medewerker } from '../types';
 // Eenvoudige, lokale authenticatie (geen server). De vaste accounts hieronder
 // staan in de code; accounts die een admin in de app aanmaakt worden lokaal
 // op het toestel bewaard (AsyncStorage).
+// `&` plakt twee types samen: een Account is een Medewerker plus een wachtwoord.
 export type Account = Medewerker & { wachtwoord: string };
 
 export const ACCOUNTS: Account[] = [
@@ -17,6 +18,8 @@ export const KANTOOR_EMAIL = 'meldingen@groeninspect.nl';
 
 export const MIN_WACHTWOORD = 6;
 
+// Vergelijkt gebruikersnamen zonder op hoofdletters of spaties te letten,
+// dus "Demo " en "demo" tellen als dezelfde.
 function zelfde(a: string, b: string) {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
@@ -33,6 +36,8 @@ export async function controleerInlog(gebruikersnaam: string, wachtwoord: string
   const account = (await alleAccounts()).find(
     (a) => zelfde(a.gebruikersnaam, gebruikersnaam) && a.wachtwoord === wachtwoord,
   );
+  // We geven het account terug zónder wachtwoord, zodat dat nergens anders
+  // in de app (of in de opgeslagen sessie) terechtkomt.
   return account ? { gebruikersnaam: account.gebruikersnaam, naam: account.naam, rol: account.rol } : null;
 }
 
@@ -41,6 +46,7 @@ export async function maakAccount(account: Account): Promise<string | null> {
   const gebruikersnaam = account.gebruikersnaam.trim().toLowerCase();
   const naam = account.naam.trim();
   if (!naam) return 'Vul een naam in.';
+  // Regex: alleen kleine letters, cijfers, punt, _ of -, en minimaal 3 tekens.
   if (!/^[a-z0-9._-]{3,}$/.test(gebruikersnaam))
     return 'Gebruikersnaam: minimaal 3 tekens, alleen letters, cijfers, punt, - of _.';
   if (account.wachtwoord.length < MIN_WACHTWOORD) return `Wachtwoord: minimaal ${MIN_WACHTWOORD} tekens.`;

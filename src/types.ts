@@ -1,3 +1,6 @@
+// `as const` zegt tegen TypeScript: deze lijst verandert nooit. Daardoor kan de
+// regel eronder er een type van maken: Categorie is dan precies
+// 'Bomen' | 'Plantsoenen' | 'Straatgroen' | 'Bermen', en niets anders.
 export const CATEGORIEEN = ['Bomen', 'Plantsoenen', 'Straatgroen', 'Bermen'] as const;
 export type Categorie = (typeof CATEGORIEEN)[number];
 
@@ -27,6 +30,8 @@ export type Medewerker = {
   rol: Rol;
 };
 
+// Alle schermen van de app, met wat je meegeeft als je ernaartoe gaat.
+// undefined = niks meegeven. Details krijgt de id van de melding mee.
 export type RootStackParamList = {
   Login: undefined;
   Overzicht: undefined;

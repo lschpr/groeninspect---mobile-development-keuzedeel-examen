@@ -16,6 +16,9 @@ import { deelMetFoto, downloadFoto, openMailto } from '../webMail';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
 
+// Bouwt de tekst van de mail als lijst van regels. De kaart-regel is null als
+// er geen locatie is; .filter gooit die eruit en .join('\n') plakt de rest
+// onder elkaar.
 function mailTekst(m: Melding, metFoto: boolean): string {
   return [
     'Nieuwe melding via de GroenInspect app',
@@ -42,6 +45,10 @@ export function DetailsScreen({ navigation, route }: Props) {
     laadMeldingen().then((alle) => setMelding(alle.find((m) => m.id === route.params.id) ?? null));
   }, [route.params.id]);
 
+  // route.params.id = de id die het overzicht meegaf bij het openen.
+  // useFocusEffect draait elke keer als dit scherm in beeld komt, zodat je
+  // altijd de nieuwste gegevens ziet. useCallback zorgt dat `laad` dezelfde
+  // functie blijft, anders zou hij bij elke render opnieuw gaan laden.
   useFocusEffect(laad);
 
   const onVerstuurd = async (id: string) => {
@@ -62,6 +69,8 @@ export function DetailsScreen({ navigation, route }: Props) {
       fotoUri: m.fotoUri,
       bestandsnaam,
     });
+    // Gedeeld of geannuleerd: dan zijn we klaar. Alleen als de browser het
+    // niet kan, gaan we verder met plan B (downloaden + mailto).
     if (resultaat === 'gedeeld') await onVerstuurd(m.id);
     if (resultaat !== 'niet-ondersteund') return;
 
@@ -102,6 +111,8 @@ export function DetailsScreen({ navigation, route }: Props) {
         );
         if (!doorgaan) return;
       }
+      // Opent de mailapp met alles al ingevuld. Daarna kijken we of de
+      // gebruiker niet op annuleren drukte; zo niet, dan markeren we hem als verstuurd.
       const resultaat = await MailComposer.composeAsync({
         recipients: [KANTOOR_EMAIL],
         subject: `Melding ${melding.categorie}, ${formatDatum(melding.aangemaaktOp)}`,
@@ -112,10 +123,14 @@ export function DetailsScreen({ navigation, route }: Props) {
     } catch {
       toonMelding('Versturen mislukt', 'De mailapp kon niet worden geopend. Probeer het later opnieuw.');
     } finally {
+      // finally draait altijd (ook na een return of fout), dus de knop
+      // stopt hier altijd met laden.
       setVersturen(false);
     }
   };
 
+  // `?.` = als melding nog null is (nog aan het laden), crash dan niet.
+  // `!= null` checkt in één keer op null én undefined.
   const verstuurd = melding?.verstuurdOp != null;
 
   return (

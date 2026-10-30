@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, CONTENT_MAX_WIDTH, hairline, radius, type } from '../theme';
 
+// Pakt het type van de `name`-prop van de icoon-bibliotheek. Zo geeft
+// TypeScript een fout als je een icoonnaam typt die niet bestaat.
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 export function Icon({ name, size = 22, color = colors.text }: { name: IconName; size?: number; color?: string }) {
@@ -162,6 +164,9 @@ type RowProps = {
   titleColor?: string;
 };
 
+// `inhoud` is een functie die de rij tekent, met of zonder "ingedrukt"-kleur.
+// Zonder onPress tekenen we alleen de rij; met onPress zetten we hem in een
+// Pressable, die ons vertelt of de vinger er nu op staat (pressed).
 export function Row({ title, value, icon, onPress, accessory = 'none', multiline, titleColor }: RowProps) {
   const inhoud = (pressed: boolean) => (
     <View style={[styles.row, pressed && { backgroundColor: colors.fill }]}>
@@ -201,6 +206,11 @@ export function Status({ verstuurd }: { verstuurd: boolean }) {
 }
 
 // Segmented control met een meeschuivende selectie (veeranimatie).
+// <T extends string> betekent: dit werkt met elk soort tekst-keuzes, bijv.
+// 'alle' | 'open' | 'verstuurd' of 'medewerker' | 'admin'.
+// Hoe het werkt: onLayout meet hoe breed de balk is. Die breedte delen we door
+// het aantal opties = breedte per knop. Het witte blokje schuift dan naar
+// (gekozen index × breedte per knop), met een vering-animatie (withSpring).
 export function SegmentedControl<T extends string>({
   options,
   value,

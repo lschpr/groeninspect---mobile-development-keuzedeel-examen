@@ -10,6 +10,9 @@ export function toonMelding(titel: string, bericht: string): void {
 
 export function bevestig(titel: string, bericht: string, okLabel: string, annuleerLabel = 'Annuleren'): Promise<boolean> {
   if (Platform.OS === 'web') return Promise.resolve(window.confirm(`${titel}\n\n${bericht}`));
+  // Alert.alert wacht niet op een antwoord, die roept alleen een functie aan
+  // als je op een knop drukt. Door hem in een Promise te stoppen kun je
+  // `await bevestig(...)` doen en krijg je true (ok) of false (annuleren) terug.
   return new Promise((resolve) => {
     Alert.alert(
       titel,

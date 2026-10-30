@@ -17,11 +17,14 @@ export async function deelMetFoto(mail: WebMail): Promise<'gedeeld' | 'geannulee
     // Het deelmenu kan geen ontvanger invullen; daarom staat het adres in de tekst.
     text: `Aan: ${mail.aan}\n\n${mail.tekst}`,
   };
+  // `?.` = alleen aanroepen als canShare bestaat; oude browsers hebben hem niet.
   if (!navigator.canShare?.(data)) return 'niet-ondersteund';
   try {
     await navigator.share(data);
     return 'gedeeld';
   } catch (e) {
+    // Sluit de gebruiker het deelmenu, dan geeft de browser een "AbortError".
+    // Dat is geen echte fout. Andere fouten gooien we wel door.
     if (e instanceof DOMException && e.name === 'AbortError') return 'geannuleerd';
     throw e;
   }
@@ -29,6 +32,10 @@ export async function deelMetFoto(mail: WebMail): Promise<'gedeeld' | 'geannulee
 
 // Synchroon (zonder await) omzetten: browsers staan navigator.share alleen toe
 // direct na een tik van de gebruiker, en een await ertussen kan dat breken.
+// Een data-URI ziet eruit als "data:image/jpeg;base64,/9j/4AAQ...": de foto
+// als lange tekst. De regex knipt hem in twee stukken: match[1] = het type
+// (image/jpeg) en match[2] = de base64-tekst. atob maakt van die tekst weer
+// losse bytes, en een Blob is een "bestand in het geheugen".
 function dataUriNaarBlob(uri: string): Blob | null {
   const match = /^data:([^;,]+);base64,(.*)$/.exec(uri);
   if (!match) return null;
@@ -38,6 +45,8 @@ function dataUriNaarBlob(uri: string): Blob | null {
   return new Blob([bytes], { type: match[1] });
 }
 
+// Truc om een download te starten: maak een onzichtbare link, klik er via
+// code op en haal hem daarna weer weg.
 export function downloadFoto(fotoUri: string, bestandsnaam: string): void {
   const a = document.createElement('a');
   a.href = fotoUri;
@@ -47,6 +56,8 @@ export function downloadFoto(fotoUri: string, bestandsnaam: string): void {
   a.remove();
 }
 
+// encodeURIComponent maakt tekst veilig voor in een link (spaties, enters en
+// tekens als & worden omgezet), anders breekt de mailto-link.
 export function openMailto(aan: string, onderwerp: string, tekst: string): void {
   window.location.href = `mailto:${aan}?subject=${encodeURIComponent(onderwerp)}&body=${encodeURIComponent(tekst)}`;
 }

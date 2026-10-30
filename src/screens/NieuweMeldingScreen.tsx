@@ -31,6 +31,8 @@ const MAX_TEKENS_CUSTOM = 40;
 const FOTO_OPTIES: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
   quality: 0.6, // kleiner bestand: sneller opslaan en versturen
+  // In de browser kunnen we geen bestand op schijf bewaren, dus daar vragen we
+  // de foto als tekst (base64) op, zodat hij in de opslag past.
   base64: Platform.OS === 'web',
 };
 
@@ -47,6 +49,8 @@ export function NieuweMeldingScreen({ navigation }: Props) {
   // Gekozen categorie, of 'custom' als de medewerker zelf een categorie invult.
   const [keuze, setKeuze] = useState<Categorie | 'custom' | null>(null);
   const [customCategorie, setCustomCategorie] = useState('');
+  // De echte categorie: bij 'custom' de zelf getypte tekst (leeg = null),
+  // anders gewoon de gekozen knop. Dit wordt elke render opnieuw berekend.
   const categorie = keuze === 'custom' ? customCategorie.trim() || null : keuze;
   const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [beschrijving, setBeschrijving] = useState('');
@@ -54,6 +58,8 @@ export function NieuweMeldingScreen({ navigation }: Props) {
   // Fouten pas tonen nadat de medewerker één keer op "Opslaan" heeft gedrukt.
   const [toonFouten, setToonFouten] = useState(false);
   // Tijdstip van de melding, getoond onder de titel.
+  // De functie in useState draait alleen de eerste keer, dus de tijd blijft
+  // vaststaan en verspringt niet bij elke render.
   const [gestart] = useState(() => new Date().toISOString());
   // Scheidingslijn onder de kop alleen tonen als de inhoud eronder schuift.
   const [gescrold, setGescrold] = useState(false);
@@ -62,6 +68,9 @@ export function NieuweMeldingScreen({ navigation }: Props) {
   // is wanneer de medewerker op "Opslaan" drukt.
   const [locatie, setLocatie] = useState<Locatie | null>(null);
   const [locatieBezig, setLocatieBezig] = useState(true);
+  // useRef = een kastje dat zijn inhoud onthoudt tussen renders, zonder dat
+  // het scherm opnieuw tekent als je de inhoud verandert. We bewaren hier het
+  // "belofte"-object van de GPS, zodat we er bij Opslaan op kunnen wachten.
   const locatiePromise = useRef<Promise<Locatie | null> | null>(null);
 
   useEffect(() => {
@@ -77,6 +86,9 @@ export function NieuweMeldingScreen({ navigation }: Props) {
   const heeftInvoer = keuze !== null || fotoUri !== null || beschrijving.trim().length > 0;
   // usePreventRemove i.p.v. een 'beforeRemove'-listener: native-stack schakelt
   // dan zelf het veeggebaar uit, zodat het scherm niet native al verdwijnt.
+  // Simpel gezegd: zolang er iets ingevuld is (en we niet net hebben opgeslagen)
+  // mag je het scherm niet zomaar sluiten. Probeer je het toch, dan komt de
+  // vraag "Melding verwijderen?". Zeg je ja, dan voeren we het sluiten alsnog uit.
   const [magVerlaten, setMagVerlaten] = useState(false);
   usePreventRemove(heeftInvoer && !magVerlaten, ({ data }) => {
     bevestig('Melding verwijderen?', 'De ingevoerde gegevens worden niet opgeslagen.', 'Verwijder', 'Verder gaan').then(
@@ -87,10 +99,14 @@ export function NieuweMeldingScreen({ navigation }: Props) {
   });
 
   // Na opslaan pas teruggaan als de blokkade is opgeheven.
+  // (setMagVerlaten werkt pas bij de volgende render; daarom gaan we hier
+  // terug en niet direct in onOpslaan, anders blokkeert hij nog.)
   useEffect(() => {
     if (magVerlaten) navigation.goBack();
   }, [magVerlaten, navigation]);
 
+  // Op web plakken we de base64-tekst achter "data:image/jpeg;base64," zodat
+  // het een geldige foto-link wordt. Op de telefoon is het gewoon een bestandspad.
   const verwerkFoto = (result: ImagePicker.ImagePickerResult) => {
     if (result.canceled) return;
     const asset = result.assets[0];
@@ -114,6 +130,9 @@ export function NieuweMeldingScreen({ navigation }: Props) {
     verwerkFoto(await ImagePicker.launchImageLibraryAsync(FOTO_OPTIES));
   };
 
+  // Plakt de suggestie achter de bestaande tekst. Eindigt die tekst nog niet
+  // op . ! of ? (dat checkt de regex), dan zetten we er eerst een punt achter.
+  // slice knipt het af op het maximum aantal tekens.
   const voegSuggestieToe = (tekst: string) => {
     setBeschrijving((huidig) => {
       const basis = huidig.trim();
@@ -130,6 +149,9 @@ export function NieuweMeldingScreen({ navigation }: Props) {
     }
 
     setOpslaan(true);
+    // Is de GPS nog bezig? Dan wachten we op dezelfde zoekactie die bij het
+    // openen van het scherm al gestart is (uit de ref). Anders nemen we het
+    // resultaat dat er al is.
     const gpsLocatie = locatieBezig ? await locatiePromise.current : locatie;
     if (!gpsLocatie) {
       const doorgaan = await bevestig(
@@ -169,6 +191,8 @@ export function NieuweMeldingScreen({ navigation }: Props) {
     }
   };
 
+  // Hulpje voor foutteksten: geeft de tekst alleen terug als je al op Opslaan
+  // hebt gedrukt én het veld nog leeg is. Anders undefined (= niks tonen).
   const fout = (ontbreekt: boolean, tekst: string) => (toonFouten && ontbreekt ? tekst : undefined);
 
   return (

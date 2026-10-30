@@ -12,11 +12,15 @@ export async function bepaalLocatie(): Promise<Locatie | null> {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return null;
 
+    // Promise.race = een wedstrijd: wie het eerst klaar is wint. Of de GPS
+    // geeft een positie, of na 10 seconden "wint" de timer met null. Zo
+    // blijft de app nooit eindeloos wachten op de GPS.
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS));
     const positie = await Promise.race([
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
       timeout,
     ]);
+    // Geen verse positie? Dan de laatst bekende positie van de telefoon.
     const resultaat = positie ?? (await Location.getLastKnownPositionAsync());
     if (!resultaat) return null;
     return { latitude: resultaat.coords.latitude, longitude: resultaat.coords.longitude };

@@ -13,11 +13,15 @@ import { OverzichtScreen } from './src/screens/OverzichtScreen';
 import { colors } from './src/theme';
 import type { RootStackParamList } from './src/types';
 
+// Een "stack" is een stapel schermen: een nieuw scherm komt bovenop de stapel,
+// en met terug haal je het bovenste scherm er weer af.
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Navigatie() {
   const { medewerker, laden } = useAuth();
 
+  // Bij het opstarten kijkt de app eerst of je nog ingelogd was. Zolang dat
+  // bezig is laten we een laad-rondje zien.
   if (laden) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
@@ -48,6 +52,9 @@ function Navigatie() {
   );
 }
 
+// De "providers" liggen als lagen om de hele app heen. Alles wat erbinnen staat
+// kan erbij: SafeAreaProvider weet waar de notch zit, AuthProvider weet wie er
+// ingelogd is en NavigationContainer regelt het wisselen van schermen.
 export default function App() {
   return (
     <SafeAreaProvider>

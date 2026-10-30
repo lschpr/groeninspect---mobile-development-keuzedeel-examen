@@ -32,8 +32,15 @@ export function LoginScreen() {
   const [geblokkeerdTot, setGeblokkeerdTot] = useState<number | null>(null);
   const [nu, setNu] = useState(() => Date.now());
 
+  // Hoeveel seconden je nog moet wachten. Tijden zijn in milliseconden, dus
+  // delen door 1000. Math.ceil rondt naar boven af, Math.max voorkomt een
+  // negatief getal.
   const resterend = geblokkeerdTot ? Math.max(0, Math.ceil((geblokkeerdTot - nu) / 1000)) : 0;
 
+  // Zolang je geblokkeerd bent, tikt er elke seconde een timer. Die werkt `nu`
+  // bij (zodat de aftelling op het scherm verandert) en heft de blokkade op als
+  // de tijd om is. De return-functie ruimt de timer weer op, anders blijft hij
+  // op de achtergrond doorlopen.
   useEffect(() => {
     if (!geblokkeerdTot) return;
     const timer = setInterval(() => {
@@ -56,9 +63,13 @@ export function LoginScreen() {
     setBezig(true);
     const gelukt = await inloggen(gebruikersnaam, wachtwoord);
     setBezig(false);
+    // Gelukt? Dan hoeven we niks te doen: de AuthProvider weet nu wie er
+    // ingelogd is en App.tsx laat dan vanzelf het overzicht zien.
     if (gelukt) return;
 
     tik('fout');
+    // Eerst in een variabele, omdat `mislukt` pas bij de volgende render de
+    // nieuwe waarde heeft.
     const pogingen = mislukt + 1;
     setMislukt(pogingen);
     setWachtwoord('');

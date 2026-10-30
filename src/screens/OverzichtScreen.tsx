@@ -24,6 +24,7 @@ export function OverzichtScreen({ navigation }: Props) {
 
   const laad = useCallback(async () => {
     const alle = await laadMeldingen();
+    // Je ziet alleen je eigen meldingen.
     setMeldingen(alle.filter((m) => m.medewerkerGebruikersnaam === medewerker?.gebruikersnaam));
   }, [medewerker]);
 
@@ -43,6 +44,11 @@ export function OverzichtScreen({ navigation }: Props) {
   const aantalOpen = (meldingen ?? []).filter((m) => m.verstuurdOp === null).length;
 
   // Meldingen per dag, nieuwste eerst.
+  // useMemo onthoudt de uitkomst en rekent alleen opnieuw als `meldingen` of
+  // `filter` verandert, niet bij elke render.
+  // Stap 1: filter op Alle / Niet verstuurd / Verstuurd.
+  // Stap 2: stop ze in een Map per dag ("bakjes" met de dag als naam).
+  // Stap 3: maak er een lijst van bakjes van, zo wil SectionList het hebben.
   const secties = useMemo(() => {
     const zichtbaar = (meldingen ?? []).filter((m) =>
       filter === 'alle' ? true : filter === 'verstuurd' ? m.verstuurdOp !== null : m.verstuurdOp === null,
@@ -136,6 +142,8 @@ export function OverzichtScreen({ navigation }: Props) {
             </Text>
           </View>
         }
+        // Eerste en laatste rij van een dag krijgen ronde hoeken, zodat elke dag
+        // eruitziet als één kaartje. Alleen tussen rijen staat een lijntje.
         renderItem={({ item, index, section }) => {
           const eerste = index === 0;
           const laatste = index === section.data.length - 1;
